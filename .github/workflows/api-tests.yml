@@ -27,3 +27,9 @@ jobs:
           -e postman/environment.json \
           -r cli,htmlextra \
           --reporter-htmlextra-export report.html
+
+      - name: Upload report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-test-report
+          path: report.html
