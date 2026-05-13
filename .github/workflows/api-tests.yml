@@ -1,0 +1,29 @@
+name: Run API Automation
+
+on:
+  repository_dispatch:
+    types: [run-api-tests]
+
+jobs:
+  newman-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Newman
+        run: |
+          npm install -g newman
+          npm install -g newman-reporter-htmlextra
+
+      - name: Run Collection
+        run: |
+          newman run postman/collection.json \
+          -e postman/environment.json \
+          -r cli,htmlextra \
+          --reporter-htmlextra-export report.html
