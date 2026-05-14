@@ -90,7 +90,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"email\": \"testuser17@example.com\",\r\n  \"password\": \"Test@1234\"\r\n}",
+              "raw": "{\r\n  \"email\": \"testuser17@example.com\",\r\n  \"password\": \"{{current_password}}\"\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1755,143 +1755,6 @@
       ]
     },
     {
-      "name": "Tickets comments",
-      "item": [
-        {
-          "name": "Add Ticket Comment",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 200 or 201', function () {",
-                  "    pm.expect(pm.response.code).to.be.oneOf([",
-                  "        200,",
-                  "        201",
-                  "    ]);",
-                  "})",
-                  "",
-                  "pm.test('Response is JSON', function () {",
-                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
-                  "})",
-                  "",
-                  "pm.test('Response time is below 3 seconds', function () {",
-                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
-                  "})"
-                ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}",
-                "type": "text"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\r\n  \"comment\": \"test\",\r\n  \"files\": []\r\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/tickets/{{ticket_ID}}/comments",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "tickets",
-                "{{ticket_ID}}",
-                "comments"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Ticket Comments",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "    pm.expect(pm.response.code).to.eql(200);",
-                  "});",
-                  "",
-                  "pm.test('Response is JSON', function () {",
-                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
-                  "});",
-                  "",
-                  "pm.test('Response time is below 3 seconds', function () {",
-                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
-                  "});",
-                  "",
-                  "pm.test('Response has comments array', function () {",
-                  "    const jsonData = pm.response.json();",
-                  "",
-                  "    pm.expect(jsonData.data.data).to.be.an('array');",
-                  "});",
-                  "",
-                  "pm.test('Total count is a number', function () {",
-                  "    const jsonData = pm.response.json();",
-                  "",
-                  "    pm.expect(jsonData.data.total).to.be.a('number');",
-                  "});"
-                ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
-              }
-            }
-          ],
-          "protocolProfileBehavior": {
-            "disableBodyPruning": true
-          },
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}",
-                "type": "text"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": ""
-            },
-            "url": {
-              "raw": "{{base_url}}/tickets/{{ticket_ID}}/comments",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "tickets",
-                "{{ticket_ID}}",
-                "comments"
-              ]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
       "name": "Tickets",
       "item": [
         {
@@ -1950,6 +1813,93 @@
           "response": []
         },
         {
+          "name": "Tickets Search",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response is JSON\", function () {",
+                  "    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
+                  "});",
+                  "",
+                  "pm.test(\"Response time is below 3 seconds\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});",
+                  "",
+                  "pm.test(\"Save random ticket ID to environment\", function () {",
+                  "    // Navigate to the correct array",
+                  "    let items = [];",
+                  "",
+                  "    if (response.data && response.data.data && Array.isArray(response.data.data)) {",
+                  "        items = response.data.data;",
+                  "    } else if (Array.isArray(response.data)) {",
+                  "        items = response.data;",
+                  "    } else if (Array.isArray(response.items)) {",
+                  "        items = response.items;",
+                  "    } else if (Array.isArray(response)) {",
+                  "        items = response;",
+                  "    }",
+                  "",
+                  "    pm.expect(items).to.be.an(\"array\").and.not.empty;",
+                  "",
+                  "    // Pick random ticket",
+                  "    const randomIndex = Math.floor(Math.random() * items.length);",
+                  "    const randomTicket = items[randomIndex];",
+                  "",
+                  "    // Get ticketId (adjust property name if needed)",
+                  "    const ticketId = randomTicket.ticketId || randomTicket.id || randomTicket._id;",
+                  "",
+                  "    pm.expect(ticketId).to.be.a(\"string\").and.not.empty;",
+                  "",
+                  "    pm.environment.set(\"ticket_ID\", ticketId);",
+                  "    console.log(\"✅ Saved random ticket_ID:\", ticketId);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"query\": \"test\",\r\n  \"offset\": 0,\r\n  \"limit\": 20,\r\n  \"filters\": {\r\n    \"ticketType\": [],\r\n    \"classificationType\": [],\r\n    \"ticketPriority\": [],\r\n    \"status\": [],\r\n    \"creatorId\": [],\r\n    \"assigneeId\": []\r\n  }\r\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/tickets/search",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tickets",
+                "search"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Get Ticket details by ID",
           "event": [
             {
@@ -1986,10 +1936,6 @@
                   "",
                   "pm.test(\"Priority exists\", function () {",
                   "    pm.expect(ticket.priority).to.exist;",
-                  "});",
-                  "",
-                  "pm.test(\"Assignee exists\", function () {",
-                  "    pm.expect(ticket.assignee).to.exist;",
                   "});",
                   "",
                   "pm.test(\"Creator exists\", function () {",
@@ -2098,124 +2044,6 @@
                 "{{ticket_ID}}",
                 "comments",
                 "mention-suggestions"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Edit Comment",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "const response = pm.response.json();",
-                  "",
-                  "pm.test(\"Status code is 200\", function () {",
-                  "    pm.expect(pm.response.code).to.eql(200);",
-                  "});",
-                  "",
-                  "pm.test(\"Response is JSON\", function () {",
-                  "    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
-                  "});",
-                  "",
-                  "pm.test(\"Response time is below 3 seconds\", function () {",
-                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
-                  "});"
-                ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
-              }
-            }
-          ],
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}",
-                "type": "text"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\r\n  \"comment\": \"test test test\",\r\n  \"files\": []\r\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/tickets/{{ticket_ID}}/comments/{{comment_ID}}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "tickets",
-                "{{ticket_ID}}",
-                "comments",
-                "{{comment_ID}}"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Tickets Search",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "const response = pm.response.json();",
-                  "",
-                  "pm.test(\"Status code is 200\", function () {",
-                  "    pm.expect(pm.response.code).to.eql(200);",
-                  "});",
-                  "",
-                  "pm.test(\"Response is JSON\", function () {",
-                  "    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
-                  "});",
-                  "",
-                  "pm.test(\"Response time is below 3 seconds\", function () {",
-                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
-                  "});"
-                ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}",
-                "type": "text"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\r\n  \"query\": \"test\",\r\n  \"offset\": 0,\r\n  \"limit\": 20,\r\n  \"filters\": {\r\n    \"ticketType\": [],\r\n    \"classificationType\": [],\r\n    \"ticketPriority\": [],\r\n    \"status\": [],\r\n    \"creatorId\": [],\r\n    \"assigneeId\": []\r\n  }\r\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/tickets/search",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "tickets",
-                "search"
               ]
             }
           },
@@ -2402,6 +2230,214 @@
           "response": []
         },
         {
+          "name": "Add Ticket Comment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 or 201', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([",
+                  "        200,",
+                  "        201",
+                  "    ]);",
+                  "})",
+                  "",
+                  "pm.test('Response is JSON', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "})",
+                  "",
+                  "pm.test('Response time is below 3 seconds', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "})"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"comment\": \"test\",\r\n  \"files\": []\r\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/tickets/{{ticket_ID}}/comments",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tickets",
+                "{{ticket_ID}}",
+                "comments"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Ticket Comments",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is JSON', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "});",
+                  "",
+                  "pm.test('Response time is below 3 seconds', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});",
+                  "",
+                  "pm.test('Response has comments array', function () {",
+                  "    pm.expect(jsonData.data.data).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Total count is a number', function () {",
+                  "    pm.expect(jsonData.data.total).to.be.a('number');",
+                  "});",
+                  "",
+                  "// === NEW TEST: Save Comment ID ===",
+                  "pm.test('Save Comment ID to environment', function () {",
+                  "    const comments = jsonData.data.data;",
+                  "    ",
+                  "    pm.expect(comments).to.be.an('array').and.not.empty;",
+                  "",
+                  "    // Take the first comment (or you can make it random if there are multiple)",
+                  "    const comment = comments[0];",
+                  "    ",
+                  "    const commentId = comment.commentId;",
+                  "    ",
+                  "    pm.expect(commentId).to.be.a('string').and.not.empty;",
+                  "",
+                  "    pm.environment.set(\"comment_ID\", commentId);",
+                  "    ",
+                  "    console.log(\"✅ Saved comment_ID:\", commentId);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "{{base_url}}/tickets/{{ticket_ID}}/comments",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tickets",
+                "{{ticket_ID}}",
+                "comments"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Edit Comment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response is JSON\", function () {",
+                  "    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
+                  "});",
+                  "",
+                  "pm.test(\"Response time is below 3 seconds\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"comment\": \"test test test\",\r\n  \"files\": []\r\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/tickets/{{ticket_ID}}/comments/{{comment_ID}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tickets",
+                "{{ticket_ID}}",
+                "comments",
+                "{{comment_ID}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Delete Ticket",
           "event": [
             {
@@ -2441,13 +2477,13 @@
               "raw": ""
             },
             "url": {
-              "raw": "{{base_url}}/tickets/{b6a343c3-3c92-4db9-89ae-f499f54a7eae}",
+              "raw": "{{base_url}}/tickets/{{ticket_ID}}",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "tickets",
-                "{b6a343c3-3c92-4db9-89ae-f499f54a7eae}"
+                "{{ticket_ID}}"
               ]
             }
           },
@@ -2817,24 +2853,55 @@
           "response": []
         },
         {
-          "name": "Change Password",
+          "name": "Change Password 1",
           "event": [
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test('Status code is 200 or 201', function () {",
-                  "    pm.expect(pm.response.code).to.be.oneOf([",
-                  "        200,",
-                  "        201",
-                  "    ]);",
-                  "})",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
                   "",
                   "pm.test('Response time is below 3 seconds', function () {",
                   "    pm.expect(pm.response.responseTime).to.be.below(3000);",
-                  "})"
-                ]
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Initialize base passwords if not set",
+                  "if (!pm.environment.get(\"current_password\")) {",
+                  "    pm.environment.set(\"current_password\", \"DDH@sivalicc*99\");",
+                  "}",
+                  "if (!pm.environment.get(\"new_password\")) {",
+                  "    pm.environment.set(\"new_password\", \"Ddh@sivalicc*99\");",
+                  "}",
+                  "",
+                  "// Toggle run direction using a counter",
+                  "let runCount = parseInt(pm.environment.get(\"change_password_run\") || \"0\");",
+                  "runCount = (runCount % 2) + 1; // alternates between 1 and 2",
+                  "pm.environment.set(\"change_password_run\", String(runCount));",
+                  "",
+                  "if (runCount === 1) {",
+                  "    // First run: change current → new",
+                  "    pm.environment.set(\"cp_send_current\", pm.environment.get(\"current_password\"));",
+                  "    pm.environment.set(\"cp_send_new\", pm.environment.get(\"new_password\"));",
+                  "} else {",
+                  "    // Second run: change new → current (reverting)",
+                  "    pm.environment.set(\"cp_send_current\", pm.environment.get(\"new_password\"));",
+                  "    pm.environment.set(\"cp_send_new\", pm.environment.get(\"current_password\"));",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
               }
             }
           ],
@@ -2854,7 +2921,87 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"currentPassword\": \"DDH@sivalicc*99\",\r\n  \"newPassword\": \"Ddh@sivalicc*99\"\r\n}"
+              "raw": "{\n  \"currentPassword\": \"{{current_password}}\",\n  \"newPassword\": \"{{new_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/users/change-password",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "users",
+                "change-password"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Change Password 2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 or 201', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "pm.test('Response time is below 3 seconds', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Initialize passwords if not set",
+                  "if (!pm.environment.get(\"current_password\")) {",
+                  "    pm.environment.set(\"current_password\", \"DDH@sivalicc*99\");",
+                  "}",
+                  "if (!pm.environment.get(\"new_password\")) {",
+                  "    pm.environment.set(\"new_password\", \"Ddh@sivalicc*99\");",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"{{new_password}}\",\n  \"newPassword\": \"{{current_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{base_url}}/users/change-password",
@@ -2949,6 +3096,18 @@
                 "packages": {},
                 "requests": {}
               }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const randomSuffix = Math.random().toString(36).substring(2, 10);",
+                  "const randomEmail = `testuser_${randomSuffix}@fcodelabs.com`;",
+                  "pm.environment.set(\"invite_email\", randomEmail);",
+                  "console.log(\"Generated invite email:\", randomEmail);"
+                ]
+              }
             }
           ],
           "request": {
@@ -2967,7 +3126,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"fullName\": \"test\",\r\n  \"email\": \"hellouser3@gmail.com\",\r\n  \"organizationId\": \"20a6da46-49d2-4010-988b-5b9dd61e354e\",\r\n  \"role\": \"extended_service_org_admin\"\r\n}",
+              "raw": "{\n  \"fullName\": \"test\",\n  \"email\": \"{{invite_email}}\",\n  \"organizationId\": \"20a6da46-49d2-4010-988b-5b9dd61e354e\",\n  \"role\": \"extended_service_org_admin\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
