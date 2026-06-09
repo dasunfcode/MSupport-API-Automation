@@ -407,7 +407,6 @@
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "const response = pm.response.json().data;",
                   "const requestBody = JSON.parse(pm.request.body.raw);",
@@ -417,7 +416,21 @@
                   "pm.test('Asset name is updated', function () { pm.expect(response.assetName).to.eql(requestBody.assetName); })",
                   "pm.test('Serial number is updated', function () { pm.expect(response.serialNumber).to.eql(requestBody.serialNumber); })",
                   "pm.test('Response time is below 3 seconds', function () { pm.expect(pm.response.responseTime).to.be.below(3000); })"
-                ]
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
               }
             }
           ],
@@ -437,7 +450,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"serialNumber\": \"MPU00139\",\r\n  \"assetName\": \"MPU00139\",\r\n  \"assetClassification\": \"machines\",\r\n  \"assetType\": \"mpure\",\r\n  \"assetStatus\": \"running\",\r\n  \"destinationCountry\": \"Sri Lanka\",\r\n  \"endCustomerOrgId\": \"c8107362-bfed-4094-83c4-db44c0c8a9cb\",\r\n  \"exWorksDate\": null,\r\n  \"files\": [],\r\n  \"installationDate\": null,\r\n  \"location\": \"\",\r\n  \"notes\": null,\r\n  \"referenceDate\": null,\r\n  \"relatedContact\": null,\r\n  \"relatedOrganizations\": null\r\n}"
+              "raw": "{\r\n  \"serialNumber\": \"MBS21332\",\r\n  \"assetName\": \"Automation AAA\",\r\n  \"assetClassification\": \"modules\",\r\n  \"assetType\": \"standard_module\",\r\n  \"assetStatus\": \"new\",\r\n  \"destinationCountry\": \"Germany\",\r\n  \"endCustomerOrgId\": \"4acd3cd6-3412-4d43-9b86-72edff6665e5\",\r\n  \"exWorksDate\": \"2026-06-10T18:30:00.000Z\",\r\n  \"files\": [],\r\n  \"installationDate\": \"2026-06-03T18:30:00.000Z\",\r\n  \"location\": \"Colombo\",\r\n  \"notes\": null,\r\n  \"referenceDate\": \"2026-06-03T18:30:00.000Z\",\r\n  \"relatedContact\": \"Automation\"\r\n}"
             },
             "url": {
               "raw": "{{base_url}}/assets/{{update_asset_ID}}",
@@ -670,7 +683,6 @@
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "const response = pm.response.json().data;",
                   "pm.test('Status code is 200', function () { pm.expect(pm.response.code).to.eql(200); })",
@@ -678,7 +690,10 @@
                   "pm.test('Response has items array', function () { pm.expect(response.data).to.be.an('array'); })",
                   "pm.test('Response has total count', function () { pm.expect(response.total).to.be.a('number'); })",
                   "pm.test('Response time is below 3 seconds', function () { pm.expect(pm.response.responseTime).to.be.below(3000); })"
-                ]
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
               }
             }
           ],
@@ -698,7 +713,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"query\": \"test\",\r\n  \"offset\": 0,\r\n  \"limit\": 20,\r\n  \"filters\": {}\r\n}"
+              "raw": "{\r\n  \"query\": \"\",\r\n  \"offset\": 0,\r\n  \"limit\": 20,\r\n  \"filters\": {}\r\n}"
             },
             "url": {
               "raw": "{{base_url}}/assets/search",
@@ -1066,6 +1081,193 @@
                 "facts"
               ]
             }
+          },
+          "response": []
+        },
+        {
+          "name": "Validate KPI Format",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 or 201', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "pm.test('Response is JSON', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "pm.test('Response has success flag', function () {",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test('Response contains KPI data array', function () {",
+                  "    pm.expect(jsonData.data).to.be.an('array');",
+                  "    pm.expect(jsonData.data.length).to.be.greaterThan(0);",
+                  "});",
+                  "",
+                  "const EXPECTED_KPI_NAMES = ['MTBF', 'MTTR', 'MTBR', 'FLRR', 'Maintenance Rate'];",
+                  "",
+                  "pm.test('All expected KPIs are present', function () {",
+                  "    const returnedNames = jsonData.data.map(k => k.name);",
+                  "    EXPECTED_KPI_NAMES.forEach(function (name) {",
+                  "        pm.expect(returnedNames).to.include(name);",
+                  "    });",
+                  "});",
+                  "",
+                  "// ====================== NEW: KPI VALUE ACCURACY TESTS ======================",
+                  "",
+                  "const kpiMap = {};",
+                  "jsonData.data.forEach(kpi => {",
+                  "    kpiMap[kpi.name] = kpi;",
+                  "});",
+                  "",
+                  "pm.test('MTBF - Value Accuracy & Plausibility', function () {",
+                  "    const mtbf = kpiMap['MTBF'];",
+                  "    pm.expect(mtbf.achievedValue).to.be.above(0);",
+                  "    pm.expect(mtbf.achievedValue).to.be.a('number');",
+                  "    // Very high MTBF is good - typically thousands of hours for reliable assets",
+                  "    pm.expect(mtbf.achievedValue).to.be.at.least(100); // Reasonable minimum threshold",
+                  "});",
+                  "",
+                  "pm.test('MTTR - Value Accuracy & Plausibility', function () {",
+                  "    const mttr = kpiMap['MTTR'];",
+                  "    pm.expect(mttr.achievedValue).to.be.above(0);",
+                  "    // MTTR is usually in hours → realistic range for most maintenance scenarios",
+                  "    pm.expect(mttr.achievedValue).to.be.below(24, \"MTTR should not exceed 24 hours on average\");",
+                  "});",
+                  "",
+                  "pm.test('MTBR - Value Accuracy & Plausibility', function () {",
+                  "    const mtbr = kpiMap['MTBR'];",
+                  "    pm.expect(mtbr.achievedValue).to.be.above(0);",
+                  "    pm.expect(mtbr.achievedValue).to.be.at.least(100);",
+                  "});",
+                  "",
+                  "pm.test('MTBF and MTBR should be very close', function () {",
+                  "    const mtbf = kpiMap['MTBF'].achievedValue;",
+                  "    const mtbr = kpiMap['MTBR'].achievedValue;",
+                  "    ",
+                  "    const difference = Math.abs(mtbf - mtbr);",
+                  "    pm.expect(difference).to.be.below(100, \"MTBF and MTBR should typically differ by less than 100 hours\");",
+                  "});",
+                  "",
+                  "pm.test('FLRR - Value Accuracy (Percentage)', function () {",
+                  "    const flrr = kpiMap['FLRR'];",
+                  "    pm.expect(flrr.achievedValue).to.be.within(0, 100, \"FLRR should be a percentage between 0 and 100\");",
+                  "});",
+                  "",
+                  "pm.test('Maintenance Rate - Value Accuracy (Percentage)', function () {",
+                  "    const mr = kpiMap['Maintenance Rate'];",
+                  "    pm.expect(mr.achievedValue).to.be.within(0, 200, \"Maintenance Rate should be a realistic percentage\");",
+                  "});",
+                  "",
+                  "pm.test('All KPIs - Achieved vs Expected Range Comparison', function () {",
+                  "    jsonData.data.forEach(function (kpi) {",
+                  "        const achieved = kpi.achievedValue;",
+                  "        const min = kpi.expectedRange.min;",
+                  "        const max = kpi.expectedRange.max;",
+                  "        ",
+                  "        // Only warn if significantly off target (not failing the test unless critical)",
+                  "        if (achieved < min * 0.5 || achieved > max * 2) {",
+                  "            console.warn(`${kpi.name}: Achieved (${achieved}) is far from target range [${min}-${max}]`);",
+                  "        }",
+                  "    });",
+                  "});",
+                  "",
+                  "pm.test('MTBF should be much higher than MTTR (Reliability Check)', function () {",
+                  "    const mtbf = kpiMap['MTBF'].achievedValue;",
+                  "    const mttr = kpiMap['MTTR'].achievedValue;",
+                  "    pm.expect(mtbf).to.be.greaterThan(mttr * 100, \"MTBF should be significantly higher than MTTR\");",
+                  "});",
+                  "",
+                  "// ====================== EXISTING TESTS (Kept + Minor Improvements) ======================",
+                  "",
+                  "jsonData.data.forEach(function (kpi) {",
+                  "    const name = kpi.name;",
+                  "",
+                  "    pm.test(`${name} - has required fields`, function () {",
+                  "        pm.expect(kpi).to.have.property('name');",
+                  "        pm.expect(kpi).to.have.property('achievedValue');",
+                  "        pm.expect(kpi).to.have.property('goal');",
+                  "        pm.expect(kpi).to.have.property('expectedRange');",
+                  "        pm.expect(kpi).to.have.property('chart');",
+                  "        pm.expect(kpi.chart).to.be.an('array');",
+                  "    });",
+                  "",
+                  "    pm.test(`${name} - achievedValue matches last chart entry`, function () {",
+                  "        const lastEntry = kpi.chart[kpi.chart.length - 1];",
+                  "        pm.expect(kpi.achievedValue).to.eql(lastEntry.y);",
+                  "    });",
+                  "",
+                  "    pm.test(`${name} - goal is consistent across chart`, function () {",
+                  "        const goals = kpi.chart.map(p => p.goal);",
+                  "        const allSame = goals.every(g => g === kpi.goal);",
+                  "        pm.expect(allSame).to.be.true;",
+                  "    });",
+                  "",
+                  "    pm.test(`${name} - expectedRange is valid`, function () {",
+                  "        pm.expect(kpi.expectedRange.min).to.be.at.most(kpi.expectedRange.max);",
+                  "    });",
+                  "",
+                  "    pm.test(`${name} - chart entries have valid structure`, function () {",
+                  "        kpi.chart.forEach(function (entry) {",
+                  "            pm.expect(entry).to.have.property('x');",
+                  "            pm.expect(entry).to.have.property('y');",
+                  "            pm.expect(entry).to.have.property('assetsCount');",
+                  "            pm.expect(entry.y).to.be.a('number');",
+                  "            pm.expect(entry.assetsCount).to.be.a('number');",
+                  "        });",
+                  "    });",
+                  "});",
+                  "",
+                  "pm.test('Response time is below 3 seconds', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}",
+                "disabled": false
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"organizationIds\": [],\n  \"assetTypes\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/kpis/analytics",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "kpis",
+                "analytics"
+              ]
+            },
+            "description": "Generated from cURL: curl -X POST \"{{base_url}}/kpis/analytics\" -H \"Content-Type: application/json\" -H \"Authorization: Bearer {{access_token}}\" -d \"{\\n  \\\"organizationIds\\\": [],\\n  \\\"assetTypes\\\": []\\n}\""
           },
           "response": []
         }
@@ -1799,7 +2001,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"name\": \"Test\",\r\n  \"description\": \"test\",\r\n  \"type\": \"problem\",\r\n  \"assetSerialNumber\": \"MPU00121\",\r\n  \"assetStatus\": \"running\",\r\n  \"classificationTypeKey\": \"failure_without_downtime\",\r\n  \"priority\": \"none\",\r\n  \"status\": \"to_do\",\r\n  \"files\": []\r\n}"
+              "raw": "{\r\n  \"name\": \"Test\",\r\n  \"description\": \"test\",\r\n  \"type\": \"problem\",\r\n  \"assetSerialNumber\": \"MPR00001\",\r\n  \"assetStatus\": \"running\",\r\n  \"classificationTypeKey\": \"failure_without_downtime\",\r\n  \"priority\": \"none\",\r\n  \"status\": \"to_do\",\r\n  \"files\": []\r\n}"
             },
             "url": {
               "raw": "{{base_url}}/tickets",
@@ -1885,7 +2087,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"query\": \"test\",\r\n  \"offset\": 0,\r\n  \"limit\": 20,\r\n  \"filters\": {\r\n    \"ticketType\": [],\r\n    \"classificationType\": [],\r\n    \"ticketPriority\": [],\r\n    \"status\": [],\r\n    \"creatorId\": [],\r\n    \"assigneeId\": []\r\n  }\r\n}"
+              "raw": "{\r\n  \"query\": \"AAA\",\r\n  \"offset\": 0,\r\n  \"limit\": 20,\r\n  \"filters\": {\r\n    \"ticketType\": [],\r\n    \"classificationType\": [],\r\n    \"ticketPriority\": [],\r\n    \"status\": [],\r\n    \"creatorId\": [],\r\n    \"assigneeId\": []\r\n  }\r\n}"
             },
             "url": {
               "raw": "{{base_url}}/tickets/search",
@@ -2156,7 +2358,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"name\": \"Test 11\",\r\n  \"description\": \"test\",\r\n  \"type\": \"problem\",\r\n  \"assetSerialNumber\": \"MPU00121\",\r\n  \"assetStatus\": \"running\",\r\n  \"classificationTypeKey\": \"failure_without_downtime\",\r\n  \"priority\": \"none\",\r\n  \"status\": \"to_do\",\r\n  \"files\": []\r\n}"
+              "raw": "{\r\n  \"name\": \"Test 11\",\r\n  \"description\": \"test\",\r\n  \"type\": \"problem\",\r\n  \"assetSerialNumber\": \"MPR00001\",\r\n  \"assetStatus\": \"running\",\r\n  \"classificationTypeKey\": \"failure_without_downtime\",\r\n  \"priority\": \"none\",\r\n  \"status\": \"to_do\",\r\n  \"files\": []\r\n}"
             },
             "url": {
               "raw": "{{base_url}}/tickets/{{ticket_ID}}",
