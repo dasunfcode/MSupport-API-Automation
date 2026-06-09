@@ -3,6 +3,12 @@ name: Run API Automation
 on:
   repository_dispatch:
     types: [run-api-tests]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target Postman environment file name'
+        required: false
+        default: 'QA'
 
 jobs:
   newman-tests:
