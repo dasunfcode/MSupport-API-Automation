@@ -3,10 +3,11 @@ name: Run API Automation
 on:
   repository_dispatch:
     types: [run-api-tests]
+
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Target Postman environment file name'
+        description: 'Target Postman environment file name (QA/DEV/UAT etc)'
         required: false
         default: 'QA'
 
@@ -15,42 +16,62 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Install Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Install Newman
+      - name: Install Newman + Reporter
         run: |
           npm install -g newman
           npm install -g newman-reporter-htmlextra
 
-      - name: Debug - Check working directory and files
+      # ✅ Strong debug (keeps future failures visible)
+      - name: Debug workspace structure
         run: |
-          echo "Current working directory:"
+          echo "=== WORKING DIRECTORY ==="
           pwd
-          echo ""
-          echo "Contents of postman directory:"
-          ls -la postman/ || echo "postman directory not found"
-          echo ""
-          echo "Checking for environment.json:"
-          [ -f postman/environment.json ] && echo "✓ environment.json found" || echo "✗ environment.json NOT found"
-          [ -f postman/collection.json ] && echo "✓ collection.json found" || echo "✗ collection.json NOT found"
 
-      - name: Run Collection
+          echo "=== FULL REPO STRUCTURE ==="
+          ls -R
+
+          echo "=== POSTMAN FOLDER CHECK ==="
+          ls -la postman || echo "❌ postman folder missing"
+
+      # ✅ Validate files before running tests (FAIL FAST)
+      - name: Validate required files
         run: |
-          newman run postman/collection.json \
-          -e postman/environment.json \
-          -r cli,htmlextra \
-          --reporter-htmlextra-export report.html
+          if [ ! -f postman/collection.json ]; then
+            echo "❌ Missing postman/collection.json"
+            exit 1
+          fi
 
+          if [ ! -f postman/environment.json ]; then
+            echo "❌ Missing postman/environment.json"
+            exit 1
+          fi
+
+          echo "✅ All required Postman files found"
+
+      # ✅ Run tests safely
+      - name: Run Newman Collection
+        run: |
+          mkdir -p reports
+
+          newman run postman/collection.json \
+            -e postman/environment.json \
+            -r cli,htmlextra \
+            --reporter-htmlextra-export reports/report.html
+
+      # ✅ Upload report even if tests fail
       - name: Upload report artifact
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: api-test-report
-          path: report.html
+          path: reports/report.html
