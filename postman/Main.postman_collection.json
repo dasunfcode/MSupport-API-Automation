@@ -352,7 +352,6 @@
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "const response = pm.response.json().data;",
                   "pm.test('Status code is 200', function () { pm.expect(pm.response.code).to.eql(200); })",
@@ -363,7 +362,10 @@
                   "pm.test('Asset status exists', function () { pm.expect(response.assetStatus).to.exist; })",
                   "pm.test('Asset type exists', function () { pm.expect(response.assetType).to.exist; })",
                   "pm.test('Response time is below 3 seconds', function () { pm.expect(pm.response.responseTime).to.be.below(3000); })"
-                ]
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
               }
             }
           ],
