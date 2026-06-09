@@ -10,6 +10,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install Node
         uses: actions/setup-node@v4
@@ -21,6 +23,18 @@ jobs:
           npm install -g newman
           npm install -g newman-reporter-htmlextra
 
+      - name: Debug - Check working directory and files
+        run: |
+          echo "Current working directory:"
+          pwd
+          echo ""
+          echo "Contents of postman directory:"
+          ls -la postman/ || echo "postman directory not found"
+          echo ""
+          echo "Checking for environment.json:"
+          [ -f postman/environment.json ] && echo "✓ environment.json found" || echo "✗ environment.json NOT found"
+          [ -f postman/collection.json ] && echo "✓ collection.json found" || echo "✗ collection.json NOT found"
+
       - name: Run Collection
         run: |
           newman run postman/collection.json \
@@ -30,6 +44,7 @@ jobs:
 
       - name: Upload report artifact
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: api-test-report
           path: report.html
