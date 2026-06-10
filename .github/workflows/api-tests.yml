@@ -1,13 +1,11 @@
 name: API Automation
 
 on:
-  pull_request:
-    types: [closed]
-    branches: [qa]
+  repository_dispatch:
+    types: [run-api-tests]
 
 jobs:
   run-api-tests:
-    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
 
     steps:
@@ -21,6 +19,9 @@ jobs:
 
       - name: Install Newman and reporter
         run: npm install -g newman newman-reporter-htmlextra
+
+      - name: Make script executable
+        run: chmod +x .github/scripts/run-api-tests.sh
 
       - name: Run API tests
         run: .github/scripts/run-api-tests.sh
