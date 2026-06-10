@@ -1,74 +1,30 @@
-name: Run API Automation
+name: API Automation
 
 on:
-  repository_dispatch:
-    types: [run-api-tests]
-
-  workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Target Postman environment file name (QA/DEV/UAT etc)'
-        required: false
-        default: 'QA'
+  pull_request:
+    types: [closed]
+    branches: [qa]
 
 jobs:
-  newman-tests:
+  run-api-tests:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Install Newman + Reporter
-        run: |
-          npm install -g newman
-          npm install -g newman-reporter-htmlextra
+      - name: Install Newman and reporter
+        run: npm install -g newman newman-reporter-htmlextra
 
-      # Strong debug (keeps future failures visible)
-      - name: Debug workspace structure
-        run: |
-          echo "=== WORKING DIRECTORY ==="
-          pwd
+      - name: Run API tests
+        run: .github/scripts/run-api-tests.sh
 
-          echo "=== FULL REPO STRUCTURE ==="
-          ls -R
-
-          echo "=== POSTMAN FOLDER CHECK ==="
-          ls -la postman || echo "postman folder missing"
-
-      # Validate files before running tests (FAIL FAST)
-      - name: Validate required files
-        run: |
-          if [ ! -f postman/Main.postman_collection.json ]; then
-            echo "Missing postman/Main.postman_collection.json"
-            exit 1
-          fi
-
-          if [ ! -f postman/QA.postman_environment.json ]; then
-            echo "Missing postman/QA.postman_environment.json"
-            exit 1
-          fi
-
-          echo "All required Postman files found"
-
-      # Run tests safely
-      - name: Run Newman Collection
-        run: |
-          mkdir -p reports
-
-          newman run postman/Main.postman_collection.json \
-            -e postman/QA.postman_environment.json \
-            -r cli,htmlextra \
-            --reporter-htmlextra-export reports/report.html
-
-      # Upload report even if tests fail
       - name: Upload report artifact
         uses: actions/upload-artifact@v4
         if: always()

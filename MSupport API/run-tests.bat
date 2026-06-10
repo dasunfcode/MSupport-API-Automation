@@ -1,19 +1,11 @@
 @echo off
-echo ========================================
-echo    MSupport API Automation Started
-echo ========================================
+echo Running API tests...
 
-newman run Main.postman_collection.json ^
-  -e QA.postman_environment.json ^
+newman run ..\postman\Main.postman_collection.json ^
+  -e ..\postman\QA.postman_environment.json ^
   --reporters cli,htmlextra ^
-  --reporter-htmlextra-export ./reports/report.html ^
-  --timeout-request 15000 ^
-  --delay-request 800 ^
-  --bail
+  --reporter-htmlextra-export reports\report.html
 
 echo.
-echo ========================================
-echo    Tests Completed!
-echo    Check "reports" folder for HTML report
-echo ========================================
+echo Report generated at reports\report.html
 pause
